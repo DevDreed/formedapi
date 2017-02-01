@@ -42,15 +42,12 @@ module.exports = function (passport) {
     opts.secretOrKey = 'tasmanianDevil';
     passport.use('jwt', new JwtStrategy(opts, function (jwt_payload, done) {
         User.findOne({
-            id: jwt_payload.sub
+            _id: jwt_payload.id
         }, function (err, user) {
             if (err) {
                 return done(err, false);
             }
             if (user) {
-                console.log({
-                    jwt_payload
-                });
                 done(null, user);
             } else {
                 done(null, false);
@@ -96,6 +93,7 @@ module.exports = function (passport) {
                         };
                         var token = jwt.sign(payload, opts.secretOrKey);
                         user.token = token;
+                        console.log({token});
                         return done(null, user, console.log('user', user));
                     }
 

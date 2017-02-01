@@ -223,11 +223,14 @@ module.exports = function (app, passport) {
         });
     });
 
-    app.post('/posts', function (req, res) {
+    app.post('/posts', passport.authenticate('jwt', {
+        session: false
+    }), function (req, res) {
         // create the post
         var newPost = new Post();
-
-        newPost.content = "test post";        
+        console.log("user id", req.user._id);
+        newPost.content = req.body.content;
+        newPost.user_id = req.user._id;
 
         newPost.save(function (err) {
             if (err)
@@ -235,9 +238,36 @@ module.exports = function (app, passport) {
 
             return newPost;
         });
+        res.json(newPost);
     });
 
+    app.get('/posts', passport.authenticate('jwt', {
+        session: false
+    }), function (req, res) {
+        //console.log("user",req.user);
+        console.log("user id", req.user._id);
+        // get all the users
+        Post.find(function(err, posts) {
+        if (err) throw err;
 
+        // object of all the users
+        res.send(posts);
+        });
+    });
+
+    app.get('/posts/:id', passport.authenticate('jwt', {
+        session: false
+    }), function (req, res) {
+        //console.log("user",req.user);
+        console.log("user id", req.user._id);
+        // get all the users
+        Post.find({user_id: req.params.id}, function(err, posts) {
+        if (err) throw err;
+
+        // object of all the users
+        res.send(posts);
+        });
+    });
 };
 
 // route middleware to ensure user is logged in

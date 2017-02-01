@@ -7,7 +7,7 @@ var postSchema = mongoose.Schema({
     content: String,
     created_at: Date,
     updated_at: Date,
-    user_id: Number,
+    user_id: String,
     group_id: Number    
 });
 
