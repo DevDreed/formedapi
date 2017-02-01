@@ -1,39 +1,10 @@
 var Post = require('../app/models/post');
+var jwt = require('jsonwebtoken');
 
 module.exports = function (app, passport) {
 
-    // normal routes ===============================================================
-
-    // show the home page (will also have our login links)
-    app.get('/', function (req, res) {
-        res.render('index.ejs');
-    });
-
-    // PROFILE SECTION =========================
-    app.get('/profile', isLoggedIn, function (req, res) {
-        res.render('profile.ejs', {
-            user: req.user
-        });
-    });
-
-    // LOGOUT ==============================
-    app.get('/logout', function (req, res) {
-        req.logout();
-        res.redirect('/');
-    });
-
-    // =============================================================================
-    // AUTHENTICATE (FIRST LOGIN) ==================================================
-    // =============================================================================
-
-    // locally --------------------------------
-    // LOGIN ===============================
-    // show the login form
-    app.get('/login', function (req, res) {
-        res.render('login.ejs', {
-            message: req.flash('loginMessage')
-        });
-    });
+    var opts = {}
+    opts.secretOrKey = 'tasmanianDevil';
 
     // process the login form
     app.post('/login',
@@ -43,24 +14,24 @@ module.exports = function (app, passport) {
                     return next(err);
                 }
                 if (!user) {
-                    return res.redirect('/login');
+                    return res.json({message: "User not found!"});
                 }
                 req.logIn(user, function (err) {
                     if (err) {
                         return next(err);
                     }
-                    return res.redirect('/profile');
+                    var payload = {
+                        id: user.id
+                    };
+                    var token = jwt.sign(payload, opts.secretOrKey);
+                    return res.json({
+                        message: "ok",
+                        token: token,
+                        user: user
+                    });
                 });
             })(req, res, next);
         });
-
-    // SIGNUP =================================
-    // show the signup form
-    app.get('/signup', function (req, res) {
-        res.render('signup.ejs', {
-            message: req.flash('signupMessage')
-        });
-    });
 
     // process the signup form
     app.post('/signup', passport.authenticate('local-signup', {
@@ -231,11 +202,9 @@ module.exports = function (app, passport) {
         console.log("user id", req.user._id);
         newPost.content = req.body.content;
         newPost.user_id = req.user._id;
-
         newPost.save(function (err) {
             if (err)
                 return err;
-
             return newPost;
         });
         res.json(newPost);
@@ -244,28 +213,21 @@ module.exports = function (app, passport) {
     app.get('/posts', passport.authenticate('jwt', {
         session: false
     }), function (req, res) {
-        //console.log("user",req.user);
         console.log("user id", req.user._id);
-        // get all the users
-        Post.find(function(err, posts) {
-        if (err) throw err;
-
-        // object of all the users
-        res.send(posts);
+        Post.find(function (err, posts) {
+            if (err) throw err;
+            res.send(posts);
         });
     });
 
     app.get('/posts/:id', passport.authenticate('jwt', {
         session: false
     }), function (req, res) {
-        //console.log("user",req.user);
-        console.log("user id", req.user._id);
-        // get all the users
-        Post.find({user_id: req.params.id}, function(err, posts) {
-        if (err) throw err;
-
-        // object of all the users
-        res.send(posts);
+        Post.find({
+            user_id: req.params.id
+        }, function (err, posts) {
+            if (err) throw err;
+            res.send(posts);
         });
     });
 };
@@ -274,6 +236,5 @@ module.exports = function (app, passport) {
 function isLoggedIn(req, res, next) {
     if (req.isAuthenticated())
         return next();
-
     res.redirect('/');
 }

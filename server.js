@@ -24,6 +24,7 @@ app.use(bodyParser.json()); // get information from html forms
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(passport.initialize());
 
 // routes ======================================================================
 require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
